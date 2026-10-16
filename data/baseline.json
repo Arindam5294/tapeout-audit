@@ -1,0 +1,24 @@
+{
+ "recordedAtBlock": 73368583,
+ "recordedAt": "2026-10-16T08:00:19Z",
+ "values": {
+  "factory.owner": "0xb3d85b42a045c1a88d800cad0f55d2566a4d3138",
+  "factory.pendingOwner": "REVERT",
+  "circuitBeacon.owner": "0x1f09daefa827f02cbb40967cc91b259763760761",
+  "transistorBeacon.owner": "0x1f09daefa827f02cbb40967cc91b259763760761",
+  "transistorBeacon.implementation": "0x265bf10fab9ddec0ee0a649c6b9db845f1b9a06b",
+  "factory.transistorBeacon": "0x1059ad62cabb6a6925bb65aa617300556c60a51b",
+  "factory.circuitBeacon": "0xf70d1ed4f62cf3780157b0b421b7e2f45bd0991c",
+  "siteRegistry.owner": "0xe4fc10592fa8ad7c408b81e99cfc54ef4b14283d",
+  "siteRegistry.pendingOwner": "0x0000000000000000000000000000000000000000",
+  "siteRegistry.opener": "0x536add8f30f03b69f6fbf29d425a816a0dc50106",
+  "domainBinding.owner": "0xe4fc10592fa8ad7c408b81e99cfc54ef4b14283d",
+  "domainBinding.pendingOwner": "0x0000000000000000000000000000000000000000",
+  "domainBinding.registry": "0xd6efb7adcc9c83dc4924ad56f6a8e4e969b9adb6",
+  "opener.owner": "REVERT",
+  "adminSlot.Processor factory": "0x0000000000000000000000000000000000000000",
+  "adminSlot.SiteRegistry": "0x0000000000000000000000000000000000000000",
+  "adminSlot.DomainBinding": "0x0000000000000000000000000000000000000000"
+ },
+ "isSealed": false
+}
