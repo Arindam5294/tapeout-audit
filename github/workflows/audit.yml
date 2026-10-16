@@ -1,0 +1,62 @@
+name: TapeOut Audit
+
+on:
+  workflow_dispatch:        # run by hand from the Actions tab
+  # schedule:               # uncomment to run every hour (public X Layer nodes are rate-limited; hourly is plenty)
+  #   - cron: "17 * * * *"
+
+permissions:
+  contents: write           # to commit data/ (report, history, state) back to the repo
+
+concurrency:
+  group: tapeout-audit
+  cancel-in-progress: false # two runs at once would race on data/logscan_state.json
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TAPEAUDIT_DIR: data
+      TAPEAUDIT_LOG_BUDGET: "60"
+      TAPEAUDIT_BYTE_BUDGET: "16000000"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install (signing + timestamping only; the audit itself is pure Python)
+        run: pip install pynacl==1.6.2 opentimestamps-client==0.7.2 pycryptodomex==3.24.1
+
+      - name: Run audit (read-only, pinned block, OKX vs dRPC)
+        run: python3 audit/run_audit.py
+
+      - name: Sign (Ed25519) and timestamp (OpenTimestamps)
+        env:
+          TAPEOUT_SIGNING_KEY: ${{ secrets.TAPEOUT_SIGNING_KEY }}
+        run: python3 audit/sign_report.py
+
+      - name: Verify the signature against the published key
+        run: python3 audit/verify_report.py data/audit_latest.json "$(grep -oE '[0-9a-f]{64}' docs/KEYS.md | head -1)"
+
+      - name: Alert line (OK / ALERT / RECOVERED / STILLFAIL)
+        id: alert
+        run: |
+          line="$(python3 audit/alert_check.py)"
+          echo "$line" | tee data/alert_line.txt
+          echo "line=$line" >> "$GITHUB_OUTPUT"
+
+      - name: Commit results
+        run: |
+          git config user.name  "tapeout-audit-bot"
+          git config user.email "tapeout-audit-bot@users.noreply.github.com"
+          git add data
+          git commit -m "audit: block $(python3 -c 'import json;print(json.load(open("data/audit_latest.json"))["pinnedBlock"]["number"])')" || echo "nothing to commit"
+          git push
+
+      - name: Fail the job on ALERT / STILLFAIL (so GitHub notifies you)
+        if: startsWith(steps.alert.outputs.line, 'ALERT') || startsWith(steps.alert.outputs.line, 'STILLFAIL')
+        run: exit 1
+        
