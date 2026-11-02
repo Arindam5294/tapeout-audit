@@ -5,7 +5,7 @@ Each report is signed with Ed25519 and timestamped on Bitcoin.
 
 By Swanix ([@swanixcrypto](https://x.com/swanixcrypto)) · MIT licensed · no keys, no paid services, no writes to the chain
 
-**Live dashboard:** https://hark.com/site/2d4035be-de06-4ffc-a39c-cacbe45f7593
+**Live dashboard:** https://arindam5294.github.io/tapeout-audit/
 
 ---
 
