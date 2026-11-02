@@ -742,6 +742,19 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
       .x-key { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-s); background: var(--fill-tertiary); }
       .x-key code { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; word-break: break-all; }
       .x-key .btn { cursor: pointer; }
+      .x-key-label { margin-top: 12px; font: var(--type-tag); color: var(--text-secondary); }
+      .x-key-label + .x-key { margin-top: 6px; }
+      button.btn, .x-actions .btn { min-height: var(--tap); cursor: pointer; }
+      button.btn:disabled { opacity: 0.6; cursor: progress; }
+      .x-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+      .x-runlist > li > .x-status { grid-column: 2; justify-self: end; }
+      .x-runlist .checklist__item small { overflow-wrap: anywhere; }
+      .x-runlist small .x-mono { font-size: max(12px, 0.92em); }
+      .x-status--run::before { background: none; border: 1.5px solid var(--text-tertiary); border-top-color: var(--text-primary); width: 7px; height: 7px; animation: x-spin 0.8s linear infinite; }
+      @keyframes x-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .x-status--run::before { animation: none; } }
+      .x-summary { margin-top: 14px; font: var(--type-label); }
+      .x-loadline { margin-top: 4px; }
       @media (max-width: 599px) {
         .x-more { min-height: var(--tap); }
         .hero__meta a { display: inline-flex; align-items: center; min-height: var(--tap); min-width: var(--tap); margin: -13px 0; vertical-align: middle; }
@@ -763,6 +776,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             <p class="x-verdict"><strong id="verdict">–</strong></p>
             <p class="x-statuses" id="hero-counts"></p>
             <p class="hero__meta" id="hero-meta"></p>
+            <p class="fineprint x-loadline" id="load-status" aria-live="polite">Loading the latest report…</p>
             <div class="links">
               <a class="btn" href="https://github.com/Arindam5294/tapeout-audit" rel="noopener" target="_blank">View source on GitHub</a>
               <a class="btn" href="https://x.com/swanixcrypto" rel="noopener" target="_blank">Follow on X</a>
@@ -811,6 +825,23 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
               <tbody id="checks-body"></tbody>
             </table>
           </div>
+        </section>
+
+        <section class="section" id="live" data-nav="Live check">
+          <div class="head">
+            <p class="head__eyebrow">Run a live check</p>
+            <h2>Re-check the key guarantees from your own browser.</h2>
+            <p class="head__sub">Asks OKX and dRPC directly, at one pinned block, and compares their answers. Read-only.</p>
+          </div>
+          <form class="x-search" id="live-form">
+            <label class="fineprint" for="live-addr" style="flex-basis:100%">Optional: a container address to check too</label>
+            <input id="live-addr" type="text" autocomplete="off" spellcheck="false" placeholder="0x…" inputmode="text"/>
+            <button class="btn" type="submit" id="live-run">Check the chain now</button>
+            <a class="btn" data-report="" href="https://github.com/Arindam5294/tapeout-audit/issues/new" rel="noopener" target="_blank">Report a problem</a>
+          </form>
+          <ul class="checklist x-runlist" id="live-steps" aria-live="polite" hidden=""></ul>
+          <p class="x-summary" id="live-summary" hidden=""></p>
+          <div class="links" id="live-links" hidden=""></div>
         </section>
 
         <section class="section" id="lookup" data-nav="Lookup">
@@ -890,12 +921,16 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           </div>
           <div class="aside">
             <h3>Verify any report yourself</h3>
-            <p class="fineprint">Run <span class="x-mono">verify_report.py</span> from the repository against this public key.</p>
+            <p class="fineprint">Check this report right here, or run <span class="x-mono">verify_report.py</span> from the repository against this public key.</p>
+            <p class="x-key-label">Current signing key, since Nov 2, 2026</p>
             <div class="x-key">
-              <code class="x-mono" id="pubkey">75b7f5f61779bad120496e4ecfaaae20784e3d4119bd39247db069bed7205f1a</code>
+              <code class="x-mono" id="pubkey">e55a18b7351ff3f628f725271e3c04c32ae00b78f5425f91b15f318ba7f8444e</code>
               <button class="btn" type="button" id="copy-key">Copy key</button>
             </div>
+            <p class="fineprint" style="margin-top:8px">Reports before Nov 2, 2026 were signed with <span class="x-mono">75b7f5f6…205f1a</span>.</p>
             <p class="fineprint" id="report-hash" style="margin-top:12px"></p>
+            <div class="x-actions"><button class="btn" type="button" id="verify-run">Verify this report</button></div>
+            <ul class="checklist x-runlist" id="verify-steps" aria-live="polite" hidden=""></ul>
           </div>
         </section>
 
@@ -915,6 +950,7 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
       </main>
       <footer class="foot">
         <p>Built by <strong>Swanix</strong> (<a class="link" href="https://x.com/swanixcrypto" rel="noopener" target="_blank">@swanixcrypto</a>), MIT licensed. Independent, not affiliated with TapeOut, HashPort or OKX. A PASS means the checks held at the stated block; not an endorsement.</p>
+        <p><a class="btn" data-report="" href="https://github.com/Arindam5294/tapeout-audit/issues/new" rel="noopener" target="_blank">Report a problem</a></p>
         <nav aria-label="Back to sections" data-auto=""></nav>
         <a class="badge" href="https://hark.com/" rel="noopener" target="_blank"><span class="hark-mark"></span><span>built by hark</span></a>
       </footer>
@@ -2376,7 +2412,10 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         "use strict";
         var A = JSON.parse(document.getElementById("audit-data").textContent);
         var IX = JSON.parse(document.getElementById("index-data").textContent);
-        var S = A.stats, SUM = A.summary, B = A.pinnedBlock, C = IX.containers, P = IX.processors;
+        var S, SUM, B, C = IX.containers || {}, P = IX.processors || {}, keys = Object.keys(C);
+        var CURRENT_KEY = "e55a18b7351ff3f628f725271e3c04c32ae00b78f5425f91b15f318ba7f8444e";
+        var RAW = "https://raw.githubusercontent.com/Arindam5294/tapeout-audit/main/data/";
+        var lastBlock = null;
         var $ = function (id) { return document.getElementById(id); };
         var fmt = function (n) { return Number(n).toLocaleString("en-US"); };
         var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
@@ -2385,7 +2424,11 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         var addrLink = function (a) { return '<a class="link x-mono" href="https://www.oklink.com/xlayer/address/' + esc(a) + '" target="_blank" rel="noopener" title="' + esc(a) + '">' + esc(short(a)) + "</a>"; };
         var badge = function (s, text) { return '<span class="x-status x-status--' + s + '">' + esc(text) + "</span>"; };
         var cls = { PASS: "pass", WARN: "warn", FAIL: "fail" };
-        var check = function (id) { return A.checks.filter(function (c) { return c.id === id; })[0] || {}; };
+        var check = function (id) { return (A.checks || []).filter(function (c) { return c.id === id; })[0] || {}; };
+
+        function render() {
+        S = A.stats || {}; SUM = A.summary || {}; B = A.pinnedBlock || {};
+        lastBlock = B.number;
         var agree = A.operators && A.operators.pinnedHashAgree && A.operators.readsAgree;
 
         /* Hero */
@@ -2439,12 +2482,6 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
             "<td>" + badge(cls[c.status] || "none", c.status) + "</td>" +
             "<td>" + body + "</td></tr>";
         }).join("");
-        $("checks-body").addEventListener("click", function (e) {
-          var b = e.target.closest(".x-more"); if (!b) return;
-          var open = b.getAttribute("aria-expanded") !== "true", id = b.getAttribute("data-d");
-          $(id + "s").hidden = open; $(id + "f").hidden = !open;
-          b.setAttribute("aria-expanded", String(open)); b.textContent = open ? "Show less" : "Show more";
-        });
 
         /* Top processors */
         $("top-sub").textContent = "Of " + fmt(S.circuits) + " circuits across " + fmt(S.processors) + " processors.";
@@ -2464,8 +2501,17 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         $("step2-pills").innerHTML = pills(["<b>" + fmt(reads || 0) + "</b> reads this run", "<b>" + (agree ? "0" : "some") + "</b> disagreements"]);
         $("step3-pills").innerHTML = pills(["<b>" + SUM.passed + "</b> pass", "<b>" + SUM.warned + "</b> warn", "<b>" + SUM.failed + "</b> fail"]);
         $("step4-pills").innerHTML = pills(["<b>Ed25519</b> signature", "<b>Bitcoin</b> timestamp", "<b>" + esc(A.runtimeSeconds) + " s</b> per run"]);
-        $("report-hash").innerHTML = 'This report\'s SHA-256: <span class="x-mono x-hex">' + esc(A.reportSha256) + "</span>" + (A.passStreak ? " · " + esc(A.passStreak) + " runs in a row with 0 failures" : "");
+        var sha = (A.proof && A.proof.sha256) || A.reportSha256;
+        $("report-hash").innerHTML = 'This report\'s SHA-256: <span class="x-mono x-hex">' + esc(sha) + "</span>" + (A.passStreak ? " · " + esc(A.passStreak) + " runs in a row with 0 failures" : "");
         $("road-cov").textContent = "Today " + S.logCoveragePct + "% of blocks since deploy are scanned";
+        }
+
+        $("checks-body").addEventListener("click", function (e) {
+          var b = e.target.closest(".x-more"); if (!b) return;
+          var open = b.getAttribute("aria-expanded") !== "true", id = b.getAttribute("data-d");
+          $(id + "s").hidden = open; $(id + "f").hidden = !open;
+          b.setAttribute("aria-expanded", String(open)); b.textContent = open ? "Show less" : "Show more";
+        });
         $("copy-key").addEventListener("click", function () {
           var b = this, k = $("pubkey").textContent.trim();
           var r = document.createRange(); r.selectNodeContents($("pubkey"));
@@ -2480,7 +2526,6 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
         });
 
         /* Check my circuit */
-        var keys = Object.keys(C);
         function find(q) {
           var l = q.trim().toLowerCase().replace(/^#/, "");
           if (!l) return null;
@@ -2539,18 +2584,250 @@ tr.is-highlight > :last-child { box-shadow: 12px 0 var(--fill-tertiary); }
           out.hidden = false;
         }
         $("lookup-form").addEventListener("submit", function (e) { e.preventDefault(); show($("lookup-q").value); });
-        var liveKeys = keys.filter(function (k) { return C[k].live; });
-        var pick = [
-          liveKeys.filter(function (k) { return C[k].verifiedOk === true; })[0],
-          liveKeys.filter(function (k) { return C[k].verifiedOk === false && !C[k].unfinishedUploads; })[0],
-          liveKeys.filter(function (k) { return C[k].unfinishedUploads > 0; })[0]
+        function examples() {
+          Array.prototype.slice.call($("examples").querySelectorAll("button")).forEach(function (b) { b.remove(); });
+          var liveKeys = keys.filter(function (k) { return C[k].live; });
+          var pick = [
+            liveKeys.filter(function (k) { return C[k].verifiedOk === true; })[0],
+            liveKeys.filter(function (k) { return C[k].verifiedOk === false && !C[k].unfinishedUploads; })[0],
+            liveKeys.filter(function (k) { return C[k].unfinishedUploads > 0; })[0]
+          ];
+          liveKeys.forEach(function (k) { if (pick.filter(Boolean).length < 3 && pick.indexOf(k) === -1) pick.push(k); });
+          pick.filter(Boolean).slice(0, 3).forEach(function (k) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "btn"; b.textContent = C[k].name;
+            b.addEventListener("click", function () { $("lookup-q").value = C[k].name; show(C[k].name); });
+            $("examples").appendChild(b);
+          });
+        }
+        function setIndex(ix) {
+          var lc = {};
+          Object.keys(ix.containers || {}).forEach(function (k) { lc[k.toLowerCase()] = ix.containers[k]; });
+          IX = { block: ix.block, chainId: ix.chainId, containers: lc, nameFormat: ix.nameFormat || IX.nameFormat, processors: ix.processors || P };
+          C = lc; P = IX.processors || {}; keys = Object.keys(C);
+          examples();
+          if (!$("lookup-result").hidden) show($("lookup-q").value);
+        }
+
+        render();
+        examples();
+
+        /* Live data from GitHub, with the embedded snapshot as fallback */
+        function getJSON(url) {
+          return fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), { cache: "no-store" })
+            .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+        }
+        getJSON(RAW + "audit_latest.json").then(function (d) {
+          if (!d || !d.pinnedBlock || !d.checks) throw new Error("bad schema");
+          A = d; render();
+          $("load-status").textContent = "Latest report: block " + fmt(B.number) + ", " + (B.time || A.generatedAt) + " · loaded live";
+        }).catch(function () {
+          $("load-status").textContent = "Showing saved snapshot (couldn't reach GitHub) · block " + fmt(B.number);
+        });
+        getJSON(RAW + "circuit_index.json").then(function (d) {
+          if (!d || !d.containers) throw new Error("bad schema");
+          setIndex(d);
+        }).catch(function () {});
+
+        /* Run lists */
+        function stepRow(list, title) {
+          var li = document.createElement("li");
+          li.innerHTML = '<span class="checklist__item">' + esc(title) + "<small>Running…</small></span>" + badge("run", "Running");
+          list.appendChild(li);
+          return function (status, detail) {
+            li.querySelector("small").innerHTML = detail;
+            li.querySelector(".x-status").outerHTML = badge(cls[status] || "none", status);
+          };
+        }
+
+        /* Live chain check */
+        var OPS = [
+          { name: "OKX", urls: ["https://rpc.xlayer.tech", "https://xlayerrpc.okx.com"] },
+          { name: "dRPC", urls: ["https://xlayer.drpc.org"] }
         ];
-        liveKeys.forEach(function (k) { if (pick.filter(Boolean).length < 3 && pick.indexOf(k) === -1) pick.push(k); });
-        pick.filter(Boolean).slice(0, 3).forEach(function (k) {
-          var b = document.createElement("button");
-          b.type = "button"; b.className = "btn"; b.textContent = C[k].name;
-          b.addEventListener("click", function () { $("lookup-q").value = C[k].name; show(C[k].name); });
-          $("examples").appendChild(b);
+        var rid = 0;
+        function post(url, method, params) {
+          var ctl = window.AbortController ? new AbortController() : null;
+          var t = setTimeout(function () { if (ctl) ctl.abort(); }, 12000);
+          return fetch(url, {
+            method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl ? ctl.signal : undefined,
+            body: JSON.stringify({ jsonrpc: "2.0", id: ++rid, method: method, params: params })
+          }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+            .then(function (j) { clearTimeout(t); if (j.error) throw new Error(j.error.message || "RPC error"); return j.result; },
+                  function (e) { clearTimeout(t); throw e; });
+        }
+        function rpc(op, method, params) {
+          var i = op.good || 0;
+          function attempt(n) {
+            var u = op.urls[(i + n) % op.urls.length];
+            return post(u, method, params).then(function (r) { op.good = (i + n) % op.urls.length; return r; }, function (e) {
+              if (n + 1 < op.urls.length) return attempt(n + 1);
+              throw new Error(op.name + ": " + e.message);
+            });
+          }
+          return attempt(0);
+        }
+        var both = function (method, params) { return Promise.all(OPS.map(function (op) { return rpc(op, method, params); })); };
+        var tail = function (h) { return "0x" + String(h || "").replace(/^0x/, "").padStart(64, "0").slice(-40).toLowerCase(); };
+        var ZERO = "0x0000000000000000000000000000000000000000";
+        var SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+        var FACTORY = "0x1f09daefa827f02cbb40967cc91b259763760761";
+        var PROXIES = [
+          { name: "Processor factory", addr: FACTORY, ok: ["0x74956236ab64ed143933040b4137e8a352e4d17b", "0xb41c1e7602eb5734be2430b72178ccb814a5293d"] },
+          { name: "SiteRegistry", addr: "0xd6efb7adcc9c83dc4924ad56f6a8e4e969b9adb6", ok: ["0xa85c4143d1d4a77f54b8e4ecc9e6d1418afea45f"] },
+          { name: "DomainBinding", addr: "0x68809fd2fb343aa57d0aeb7f33defe477c9666f9", ok: ["0x5ebf29b80789e548907c707530c3c7607c4347df"] }
+        ];
+        var BEACONS = [
+          { name: "Circuit beacon", addr: "0xf70d1ed4f62cf3780157b0b421b7e2f45bd0991c", impl: "0x977f217887e085d298cb3819cdad5a0ee35f29b2" },
+          { name: "Transistor beacon", addr: "0x1059ad62cabb6a6925bb65aa617300556c60a51b", impl: "0x265bf10fab9ddec0ee0a649c6b9db845f1b9a06b" }
+        ];
+        var mono = function (s) { return '<span class="x-mono x-hex">' + esc(s) + "</span>"; };
+        var errMsg = function (e) { return "Couldn't read: " + esc(e && e.message ? e.message : e); };
+
+        $("live-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+          var btn = $("live-run"); if (btn.disabled) return;
+          var addr = $("live-addr").value.trim().toLowerCase();
+          if (addr && !/^0x[0-9a-f]{40}$/.test(addr)) { $("live-addr").setCustomValidity("Enter a full 0x address (42 characters)"); $("live-addr").reportValidity(); return; }
+          $("live-addr").setCustomValidity("");
+          btn.disabled = true; btn.textContent = "Checking…";
+          var list = $("live-steps"); list.innerHTML = ""; list.hidden = false;
+          $("live-summary").hidden = true; $("live-links").hidden = true;
+          var rA = stepRow(list, "a. Both operators see the same block");
+          var rB = stepRow(list, "b. Upgradeable contracts run audited code");
+          var rC = stepRow(list, "c. Processor beacons frozen");
+          var rD = stepRow(list, "d. Factory sealed");
+          var rE = stepRow(list, "e. Operators agree");
+          var rF = addr ? stepRow(list, "Container " + short(addr)) : null;
+          var results = [], seen = { OKX: {}, dRPC: {} }, blk, blkHex;
+          var done = function (row, s, d) { results.push(s); row(s, d); };
+          var record = function (key, vals) { seen.OKX[key] = vals[0]; seen.dRPC[key] = vals[1]; };
+
+          both("eth_blockNumber", []).then(function (ns) {
+            blk = Math.min(parseInt(ns[0], 16), parseInt(ns[1], 16)) - 2;
+            blkHex = "0x" + blk.toString(16);
+            lastBlock = blk;
+            return both("eth_getBlockByNumber", [blkHex, false]);
+          }).then(function (bs) {
+            var h = bs.map(function (b) { return b && b.hash; });
+            record("blockHash", h);
+            var ok = h[0] && h[0] === h[1];
+            done(rA, ok ? "PASS" : "FAIL", "Block " + fmt(blk) + ": " + (ok ? "both return " + mono(short(h[0])) : "OKX " + mono(short(h[0])) + ", dRPC " + mono(short(h[1]))));
+          }).catch(function (err) {
+            done(rA, "FAIL", errMsg(err));
+            throw err;
+          }).then(function () {
+            var pB = Promise.all(PROXIES.map(function (p) { return both("eth_getStorageAt", [p.addr, SLOT, blkHex]); })).then(function (all) {
+              var bad = [];
+              all.forEach(function (vals, i) {
+                var v = vals.map(tail), p = PROXIES[i];
+                record(p.name + " impl", v);
+                if (!v.every(function (x) { return p.ok.indexOf(x) !== -1; })) bad.push(p.name + " → " + short(v[0]) + (v[0] !== v[1] ? " / " + short(v[1]) : ""));
+              });
+              done(rB, bad.length ? "FAIL" : "PASS", bad.length ? "Unexpected implementation: " + esc(bad.join("; ")) : "Factory, SiteRegistry and DomainBinding match the audited list on both operators");
+            }).catch(function (err) { done(rB, "FAIL", errMsg(err)); });
+
+            var pC = Promise.all(BEACONS.map(function (b) {
+              return Promise.all([both("eth_call", [{ to: b.addr, data: "0x8da5cb5b" }, blkHex]), both("eth_call", [{ to: b.addr, data: "0x5c60da1b" }, blkHex])]);
+            })).then(function (all) {
+              var fail = [], warn = [];
+              all.forEach(function (r, i) {
+                var b = BEACONS[i], o = r[0].map(tail), im = r[1].map(tail);
+                record(b.name + " owner", o); record(b.name + " impl", im);
+                if (!im.every(function (x) { return x === b.impl; })) fail.push(b.name + " implementation is " + short(im[0]));
+                if (!o.every(function (x) { return x === ZERO; })) warn.push(b.name + " owner is " + short(o[0]));
+              });
+              if (fail.length) done(rC, "FAIL", esc(fail.concat(warn).join("; ")));
+              else if (warn.length) done(rC, "WARN", esc(warn.join("; ")) + ": the owner can still change existing processors");
+              else done(rC, "PASS", "Frozen: nobody can change existing processors");
+            }).catch(function (err) { done(rC, "FAIL", errMsg(err)); });
+
+            var pD = Promise.all([both("eth_call", [{ to: FACTORY, data: "0x631f9852" }, blkHex]), both("eth_call", [{ to: FACTORY, data: "0x8da5cb5b" }, blkHex])]).then(function (r) {
+              var sealed = r[0].map(function (x) { return /[1-9a-f]/i.test(String(x).replace(/^0x/, "")); }), own = r[1].map(tail);
+              record("Factory sealed", sealed); record("Factory owner", own);
+              var ownTxt = " · Factory owner " + mono(own[0] === ZERO ? "0x0 (none)" : own[0]);
+              if (sealed[0] && sealed[1]) done(rD, "PASS", "Sealed: nobody can change how new processors are made" + ownTxt);
+              else done(rD, "WARN", "Factory not sealed yet: owner can still change how new processors are made" + ownTxt);
+            }).catch(function (err) { done(rD, "FAIL", errMsg(err)); });
+
+            var pF = rF ? Promise.all([both("eth_getCode", [addr, blkHex])]).then(function (r) {
+              var has = r[0].map(function (c) { return !!c && c !== "0x" && c.length > 2; });
+              record("Container code", has);
+              var hit = C[addr];
+              var idx = hit ? "In circuit index: " + esc(hit.name) + (hit.live ? ", live" : ", not live") + ", processor #" + esc(hit.processor) : "Not in the circuit index (only opened containers are indexed)";
+              done(rF, has[0] && hit ? "PASS" : "WARN", "Has contract code: " + (has[0] ? "yes" : "no") + " · " + idx);
+            }).catch(function (err) { done(rF, "FAIL", errMsg(err)); }) : Promise.resolve();
+
+            return Promise.all([pB, pC, pD, pF]);
+          }).then(function () {
+            var diff = Object.keys(seen.OKX).filter(function (k) { return JSON.stringify(seen.OKX[k]) !== JSON.stringify(seen.dRPC[k]); });
+            var n = Object.keys(seen.OKX).length;
+            done(rE, diff.length ? "FAIL" : "PASS", diff.length ? "They differ on: " + esc(diff.join(", ")) : "All " + n + " values identical across OKX and dRPC");
+          }, function () {
+            [rB, rC, rD, rE].concat(rF ? [rF] : []).forEach(function (r) { done(r, "FAIL", "Skipped: couldn't pin a block from both operators"); });
+          }).then(function () {
+            var c = function (s) { return results.filter(function (x) { return x === s; }).length; };
+            var when = new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+            $("live-summary").textContent = "Live check at block " + (blk ? fmt(blk) : "–") + ", " + when + ": " + c("PASS") + " pass, " + c("WARN") + " warn, " + c("FAIL") + " fail";
+            $("live-summary").hidden = false;
+            if (blk) {
+              $("live-links").innerHTML = '<a class="btn" href="https://www.oklink.com/xlayer/block/' + blk + '" target="_blank" rel="noopener">Block ' + fmt(blk) + " on OKLink</a>" +
+                (addr ? '<a class="btn" href="https://www.oklink.com/xlayer/address/' + addr + '" target="_blank" rel="noopener">Container on OKLink</a>' : "");
+              $("live-links").hidden = false;
+            }
+            btn.disabled = false; btn.textContent = "Check the chain now";
+          });
+        });
+
+        /* Verify this report */
+        var hex = function (buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ("0" + b.toString(16)).slice(-2); }).join(""); };
+        var unhex = function (h) { h = String(h).replace(/^0x/, ""); var a = new Uint8Array(h.length / 2); for (var i = 0; i < a.length; i++) a[i] = parseInt(h.substr(i * 2, 2), 16); return a; };
+        $("verify-run").addEventListener("click", function () {
+          var btn = this; if (btn.disabled) return;
+          var list = $("verify-steps"); list.innerHTML = ""; list.hidden = false;
+          var pr = A.proof;
+          if (!pr || !pr.sha256 || !pr.signature || !pr.publicKey || pr.reportBlock == null) {
+            stepRow(list, "Report proof")("WARN", "This copy of the report carries no signature data. Reload once GitHub is reachable, or run " + mono("verify_report.py") + ".");
+            return;
+          }
+          if (!window.crypto || !crypto.subtle) {
+            stepRow(list, "Browser support")("WARN", "Your browser can't verify Ed25519 yet; use Chrome 137+, Safari 17+ or Firefox 129+, or run " + mono("verify_report.py") + ".");
+            return;
+          }
+          btn.disabled = true; btn.textContent = "Verifying…";
+          var rKey = stepRow(list, "Signing key");
+          var rHash = stepRow(list, "Fingerprint (SHA-256)");
+          var rSig = stepRow(list, "Ed25519 signature");
+          var want = String(pr.sha256).toLowerCase().replace(/^0x/, "");
+          var pk = String(pr.publicKey).toLowerCase().replace(/^0x/, "");
+          rKey(pk === CURRENT_KEY ? "PASS" : "WARN", pk === CURRENT_KEY ? "Matches the published current key " + mono("e55a18b7…444e") : "Signed with " + mono(short(pk)) + ", not the published current key");
+          var url = RAW + "reports/report_" + encodeURIComponent(pr.reportBlock) + ".json";
+          fetch(url + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+            .then(function (buf) { return crypto.subtle.digest("SHA-256", buf); })
+            .then(function (d) {
+              var got = hex(d);
+              rHash(got === want ? "PASS" : "FAIL", got === want ? "Fingerprint matches: " + mono(short(got)) + " for report_" + esc(pr.reportBlock) + ".json" : "Mismatch: file hashes to " + mono(short(got)) + ", report says " + mono(short(want)));
+            }, function (err) { rHash("FAIL", "Couldn't fetch report_" + esc(pr.reportBlock) + ".json: " + esc(err.message)); })
+            .then(function () {
+              return crypto.subtle.importKey("raw", unhex(pk), { name: "Ed25519" }, false, ["verify"]).then(function (key) {
+                return crypto.subtle.verify("Ed25519", key, unhex(pr.signature), new TextEncoder().encode(want)).then(function (ok) {
+                  rSig(ok ? "PASS" : "FAIL", ok ? "Signature valid, signed by TapeOut Audit key " + mono(pk.slice(0, 8) + "…" + pk.slice(-4)) + ". Bitcoin timestamp: run " + mono("verify_report.py") + " for the OpenTimestamps proof." : "Signature does not match this key and fingerprint");
+                });
+              }, function () {
+                rSig("WARN", "Your browser can't verify Ed25519 yet; use Chrome 137+, Safari 17+ or Firefox 129+, or run " + mono("verify_report.py") + ".");
+              });
+            })
+            .catch(function (err) { rSig("FAIL", errMsg(err)); })
+            .then(function () { btn.disabled = false; btn.textContent = "Verify this report"; });
+        });
+
+        /* Report a problem */
+        document.addEventListener("click", function (e) {
+          var a = e.target.closest("[data-report]"); if (!a) return;
+          var body = "**What I saw:**\n\n\n**Block number:** " + (lastBlock != null ? lastBlock : "") +
+            "\n\n**Circuit / address:** " + ($("live-addr").value.trim() || $("lookup-q").value.trim()) +
+            "\n\n**Browser:** " + navigator.userAgent + "\n";
+          a.href = "https://github.com/Arindam5294/tapeout-audit/issues/new?title=" + encodeURIComponent("Problem report: ") + "&body=" + encodeURIComponent(body);
         });
       })();
     </script>
