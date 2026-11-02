@@ -2,8 +2,8 @@ name: TapeOut Audit
 
 on:
   workflow_dispatch:        # run by hand from the Actions tab
-  # schedule:               # uncomment to run every hour (public X Layer nodes are rate-limited; hourly is plenty)
-  #   - cron: "17 * * * *"
+  schedule:               # every hour, 24x7 (public X Layer nodes are rate-limited; hourly is plenty)
+    - cron: "17 * * * *"
 
 permissions:
   contents: write           # to commit data/ (report, history, state) back to the repo

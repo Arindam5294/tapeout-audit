@@ -30,7 +30,9 @@ BINDING = "0x68809fd2fb343aa57d0aeb7f33defe477c9666f9"
 CIRCUIT_BEACON = "0xf70d1ed4f62cf3780157b0b421b7e2f45bd0991c"
 TRANSISTOR_BEACON = "0x1059ad62cabb6a6925bb65aa617300556c60a51b"
 EXPECT = {
-    FACTORY: ["0x74956236ab64ed143933040b4137e8a352e4d17b"],
+    # 2026-10-22: TapeOut froze processors (both beacons renounced) and moved the X Layer factory to a new
+    # implementation. TapeKit 37c617e pins it as XLAYER factorySeal.implementation. The old one stays listed for history.
+    FACTORY: ["0x74956236ab64ed143933040b4137e8a352e4d17b", "0xb41c1e7602eb5734be2430b72178ccb814a5293d"],
     REGISTRY: ["0xa85c4143d1d4a77f54b8e4ecc9e6d1418afea45f"],
     BINDING: ["0x5ebf29b80789e548907c707530c3c7607c4347df"],
     CIRCUIT_BEACON: ["0x977f217887e085d298cb3819cdad5a0ee35f29b2"],
@@ -226,16 +228,22 @@ if baseline is None:
     jsave("baseline.json", baseline, 1)
     base_new = True
 else: base_new = False
-changed = {k: {"baseline": baseline["values"].get(k), "now": v} for k, v in gov_view.items() if baseline["values"].get(k) != v}
+changed_all = {k: {"baseline": baseline["values"].get(k), "now": v} for k, v in gov_view.items() if baseline["values"].get(k) != v}
+# Renouncing a beacon (owner -> 0x0) only removes control; it is the documented 2026-10-22 "processors frozen" step.
+RENOUNCE_OK = ("circuitBeacon.owner", "transistorBeacon.owner")
+renounced = {k: v for k, v in changed_all.items() if k in RENOUNCE_OK and v["now"] == "0x" + "0" * 40}
+changed = {k: v for k, v in changed_all.items() if k not in renounced}
+frozen = gov_view["circuitBeacon.owner"] == "0x" + "0" * 40 and gov_view["transistorBeacon.owner"] == "0x" + "0" * 40
 wiring_ok = (gov_view["siteRegistry.opener"] == OPENER and gov_view["domainBinding.registry"] == REGISTRY
              and gov_view["factory.transistorBeacon"] == TRANSISTOR_BEACON and fac_cb == CIRCUIT_BEACON)
 ZERO = "0x" + "0" * 40
 st = "PASS" if not changed and wiring_ok else "FAIL"
 check("C07", "Owners and admin keys unchanged", "Nobody has quietly handed control of the core contracts to a new address.",
       st, (f"{len(gov_view)} control values match the baseline recorded at block {baseline['recordedAtBlock']}" + (" (baseline created this run)" if base_new else "")
+           + (f" except {', '.join(renounced)} renounced to 0x0 (processors frozen; control removed, not handed over)" if renounced else "")
            + "; contracts are wired to each other as documented (registry->opener, binding->registry, factory->beacons). ERC-1967 admin slots are empty (UUPS: upgrades are owner-gated in code)."
            if st == "PASS" else f"Changed vs baseline: {changed}; wiring ok: {wiring_ok}"),
-      {"current": gov_view, "baselineBlock": baseline["recordedAtBlock"], "changed": changed})
+      {"current": gov_view, "baselineBlock": baseline["recordedAtBlock"], "changed": changed, "renounced": renounced})
 check("C08", "Transistor code unchanged", "The code behind transistors (the building blocks of circuits) is the same as when monitoring started.",
       "PASS" if gov_view["transistorBeacon.implementation"] == baseline["values"]["transistorBeacon.implementation"] else "FAIL",
       f"Transistor beacon {TRANSISTOR_BEACON} -> implementation {gov_view['transistorBeacon.implementation']} (baseline-pinned; TapeKit publishes no expected value for it).",
@@ -243,8 +251,10 @@ check("C08", "Transistor code unchanged", "The code behind transistors (the buil
 check("C09", "Processor factory is sealed", "Once sealed, nobody can change how processors work; until then the owner still can.",
       "PASS" if sealed else "WARN",
       ("factory.isSealed() = true." if sealed else
-       f"factory.isSealed() = {sealed}. The factory owner {gov_view['factory.owner']} can still upgrade the factory and the circuit/transistor beacons (and so the code of all {len(S['cpus'])} processors). TapeKit's own docs recommend sealing the factory before TapeSend goes live. This is a trust assumption, not an exploit."),
-      {"isSealed": sealed, "owner": gov_view["factory.owner"]})
+       (f"Processors are FROZEN: both beacons have no owner, so nobody can change the code of the {len(S['cpus'])} existing processors. "
+        f"factory.isSealed() = {sealed}: the factory itself is still upgradeable by {gov_view['factory.owner']} (affects new processors only)." if frozen else
+       f"factory.isSealed() = {sealed}. The factory owner {gov_view['factory.owner']} can still upgrade the factory and the circuit/transistor beacons (and so the code of all {len(S['cpus'])} processors). TapeKit's own docs recommend sealing the factory before TapeSend goes live. This is a trust assumption, not an exploit.")),
+      {"isSealed": sealed, "frozen": frozen, "owner": gov_view["factory.owner"]})
 
 # ======================================================================
 # 5. Processors: unique, registered, have code, use the circuit beacon; append-only numbering

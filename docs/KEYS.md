@@ -6,7 +6,7 @@ this exact key, it was not produced by TapeOut Audit.
 | | |
 |---|---|
 | Algorithm | Ed25519 (RFC 8032) |
-| Public key (hex, 32 bytes) | `75b7f5f61779bad120496e4ecfaaae20784e3d4119bd39247db069bed7205f1a` |
+| Public key (hex, 32 bytes) | `e55a18b7351ff3f628f725271e3c04c32ae00b78f5425f91b15f318ba7f8444e` |
 | Signed message | the report's `reportSha256`, as a 64-character lowercase hex string, UTF-8 encoded |
 | In use since | X Layer block 73,369,151 (2026-10-16) |
 
@@ -15,7 +15,7 @@ This key is separate from the Shield Audit key. It signs TapeOut Audit reports o
 ## Verifying
 
 ```sh
-python3 audit/verify_report.py data/audit_latest.json 75b7f5f61779bad120496e4ecfaaae20784e3d4119bd39247db069bed7205f1a
+python3 audit/verify_report.py data/audit_latest.json e55a18b7351ff3f628f725271e3c04c32ae00b78f5425f91b15f318ba7f8444e
 ```
 
 `verify_report.py` uses only the Python standard library (it has its own RFC 8032 verifier), so you can audit the
@@ -33,3 +33,5 @@ verifier in a few minutes.
 
 If the key is ever replaced, this file will list the old key, the new key, the block where the change happened,
 and a statement signed by the old key that endorses the new one.
+
+Reports before 2026-11-02 were signed with the previous key 75b7f5f61779bad120496e4ecfaaae20784e3d4119bd39247db069bed7205f1a.

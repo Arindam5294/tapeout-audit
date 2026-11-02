@@ -94,7 +94,7 @@ integrity problem, and it raises an alert. Exact rules are in [docs/METHODOLOGY.
 ## Verify a report yourself
 
 ```sh
-python3 audit/verify_report.py data/audit_latest.json 75b7f5f61779bad120496e4ecfaaae20784e3d4119bd39247db069bed7205f1a
+python3 audit/verify_report.py data/audit_latest.json e55a18b7351ff3f628f725271e3c04c32ae00b78f5425f91b15f318ba7f8444e
 # block 73370207 0xa101…4c8a
 # report sha256 … OK
 # signature VALID
